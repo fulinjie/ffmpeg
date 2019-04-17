@@ -79,6 +79,11 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUVJ422P,  ///< planar YUV 4:2:2, 16bpp, full scale (JPEG), deprecated in favor of AV_PIX_FMT_YUV422P and setting color_range
     AV_PIX_FMT_YUVJ444P,  ///< planar YUV 4:4:4, 24bpp, full scale (JPEG), deprecated in favor of AV_PIX_FMT_YUV444P and setting color_range
     AV_PIX_FMT_UYVY422,   ///< packed YUV 4:2:2, 16bpp, Cb Y0 Cr Y1
+    AV_PIX_FMT_Y210LE,    ///< packed YUV 4:2:2, 10bpp, Y0 Cb Y1 Cr, little-endian
+    AV_PIX_FMT_Y210BE,    ///< packed YUV 4:2:2, 10bpp, Y0 Cb Y1 Cr, big-endian
+    AV_PIX_FMT_AYUV,      ///< packed YUV 4:4:4, 8bpp,  A Y Cb Cr
+    AV_PIX_FMT_Y410LE,    ///< packed YUV 4:4:4, 10bpp, Cr Y Cb A, little-endian
+    AV_PIX_FMT_Y410BE,    ///< packed YUV 4:4:4, 10bpp, Cr Y Cb A, big-endian
     AV_PIX_FMT_UYYVYY411, ///< packed YUV 4:1:1, 12bpp, Cb Y0 Y1 Cr Y2 Y3
     AV_PIX_FMT_BGR8,      ///< packed RGB 3:3:2,  8bpp, (msb)2B 3G 3R(lsb)
     AV_PIX_FMT_BGR4,      ///< packed RGB 1:2:1 bitstream,  4bpp, (msb)1B 2G 1R(lsb), a byte contains two pixels, the first pixel in the byte is the one composed by the 4 msb bits
