@@ -43,6 +43,7 @@
 #include "pixfmt.h"
 #include "pixdesc.h"
 #include "time.h"
+#include "libavutil/imgutils.h"
 
 typedef struct QSVDevicePriv {
     AVBufferRef *child_device_ctx;
@@ -445,7 +446,12 @@ static int qsv_init_internal_session(AVHWFramesContext *ctx,
     mfxVideoParam par;
     mfxStatus err;
 
-    err = MFXInit(device_priv->impl, &device_priv->ver, session);
+    mfxInitParam init_par   = { MFX_IMPL_AUTO_ANY };
+    init_par.GPUCopy        = !upload;
+    init_par.Implementation = device_priv->impl;
+    init_par.Version        = device_priv->ver;
+
+    err = MFXInitEx(init_par, session);
     if (err != MFX_ERR_NONE) {
         av_log(ctx, AV_LOG_ERROR, "Error initializing an internal session\n");
         return AVERROR_UNKNOWN;
