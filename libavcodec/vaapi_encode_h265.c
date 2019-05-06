@@ -437,9 +437,12 @@ static int vaapi_encode_h265_init_sequence_params(AVCodecContext *avctx)
     // These have to come from the capabilities of the encoder.  We have no
     // way to query them, so just hardcode parameters which work on the Intel
     // driver.
-    // CTB size from 8x8 to 32x32.
+    // CTB size from 8x8 to 32x32. (64x64 when using low power mode for hw limitation)
     sps->log2_min_luma_coding_block_size_minus3   = 0;
-    sps->log2_diff_max_min_luma_coding_block_size = 2;
+    if (ctx->low_power)
+        sps->log2_diff_max_min_luma_coding_block_size = 3;
+    else
+        sps->log2_diff_max_min_luma_coding_block_size = 2;
     // Transform size from 4x4 to 32x32.
     sps->log2_min_luma_transform_block_size_minus2   = 0;
     sps->log2_diff_max_min_luma_transform_block_size = 3;
@@ -548,12 +551,13 @@ static int vaapi_encode_h265_init_sequence_params(AVCodecContext *avctx)
     pps->pps_pic_parameter_set_id = 0;
     pps->pps_seq_parameter_set_id = sps->sps_seq_parameter_set_id;
 
-    pps->num_ref_idx_l0_default_active_minus1 = 0;
-    pps->num_ref_idx_l1_default_active_minus1 = 0;
+    pps->num_ref_idx_l0_default_active_minus1 = 1;
+    pps->num_ref_idx_l1_default_active_minus1 = 1;
 
     pps->init_qp_minus26 = priv->fixed_qp_idr - 26;
 
-    pps->cu_qp_delta_enabled_flag = (ctx->va_rc_mode != VA_RC_CQP);
+    // modify QP values in non-CQP mode and low power mode encoding
+    pps->cu_qp_delta_enabled_flag = (ctx->va_rc_mode != VA_RC_CQP | ctx->low_power);
     pps->diff_cu_qp_delta_depth   = 0;
 
     pps->pps_loop_filter_across_slices_enabled_flag = 1;
@@ -873,6 +877,8 @@ static int vaapi_encode_h265_init_slice_params(AVCodecContext *avctx,
                                                VAAPIEncodeSlice *slice)
 {
     VAAPIEncodeH265Context           *priv = avctx->priv_data;
+    VAAPIEncodeContext                *ctx = avctx->priv_data;
+
     VAAPIEncodeH265Picture           *hpic = pic->priv_data;
     const H265RawSPS                  *sps = &priv->raw_sps;
     const H265RawPPS                  *pps = &priv->raw_pps;
@@ -1052,11 +1058,15 @@ static int vaapi_encode_h265_init_slice_params(AVCodecContext *avctx,
         av_assert0(pic->type == PICTURE_TYPE_P ||
                    pic->type == PICTURE_TYPE_B);
         vslice->ref_pic_list0[0] = vpic->reference_frames[0];
+        if (ctx->low_power)
+            vslice->ref_pic_list1[0] = vslice->ref_pic_list0[0];
     }
     if (pic->nb_refs >= 2) {
         // Forward reference for B-frame.
         av_assert0(pic->type == PICTURE_TYPE_B);
         vslice->ref_pic_list1[0] = vpic->reference_frames[1];
+        if (ctx->low_power)
+            vslice->ref_pic_list0[0] = vslice->ref_pic_list1[0];
     }
 
     return 0;
@@ -1173,8 +1183,11 @@ static av_cold int vaapi_encode_h265_init(AVCodecContext *avctx)
     ctx->surface_width  = FFALIGN(avctx->width,  16);
     ctx->surface_height = FFALIGN(avctx->height, 16);
 
-    // CTU size is currently hard-coded to 32.
-    ctx->slice_block_width = ctx->slice_block_height = 32;
+    // CTU size is currently hard-coded to 32. (64x64 when using low power mode)
+    if (ctx->low_power)
+        ctx->slice_block_width = ctx->slice_block_height = 64;
+    else
+        ctx->slice_block_width = ctx->slice_block_height = 32;
 
     if (priv->qp > 0)
         ctx->explicit_qp = priv->qp;
