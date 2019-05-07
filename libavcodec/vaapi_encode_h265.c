@@ -558,7 +558,7 @@ static int vaapi_encode_h265_init_sequence_params(AVCodecContext *avctx)
 
     // modify QP values in non-CQP mode and low power mode encoding
     pps->cu_qp_delta_enabled_flag = (ctx->va_rc_mode != VA_RC_CQP | ctx->low_power);
-    pps->diff_cu_qp_delta_depth   = 0;
+    pps->diff_cu_qp_delta_depth   = ctx->low_power ? 3 : 0;
 
     pps->pps_loop_filter_across_slices_enabled_flag = 1;
 
@@ -1058,15 +1058,19 @@ static int vaapi_encode_h265_init_slice_params(AVCodecContext *avctx,
         av_assert0(pic->type == PICTURE_TYPE_P ||
                    pic->type == PICTURE_TYPE_B);
         vslice->ref_pic_list0[0] = vpic->reference_frames[0];
-        if (ctx->low_power)
-            vslice->ref_pic_list1[0] = vslice->ref_pic_list0[0];
     }
     if (pic->nb_refs >= 2) {
         // Forward reference for B-frame.
         av_assert0(pic->type == PICTURE_TYPE_B);
         vslice->ref_pic_list1[0] = vpic->reference_frames[1];
-        if (ctx->low_power)
-            vslice->ref_pic_list0[0] = vslice->ref_pic_list1[0];
+    }
+
+    if (pic->type == PICTURE_TYPE_P && ctx->low_power) {
+        vslice->slice_type = HEVC_SLICE_B;
+        for (i = 0; i < FF_ARRAY_ELEMS(vslice->ref_pic_list0); i++) {
+            vslice->ref_pic_list1[i].picture_id = vslice->ref_pic_list0[i].picture_id;
+            vslice->ref_pic_list1[i].flags      = vslice->ref_pic_list0[i].flags;
+        }
     }
 
     return 0;
