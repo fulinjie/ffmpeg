@@ -551,14 +551,14 @@ static int vaapi_encode_h265_init_sequence_params(AVCodecContext *avctx)
     pps->pps_pic_parameter_set_id = 0;
     pps->pps_seq_parameter_set_id = sps->sps_seq_parameter_set_id;
 
-    pps->num_ref_idx_l0_default_active_minus1 = 1;
-    pps->num_ref_idx_l1_default_active_minus1 = 1;
+    pps->num_ref_idx_l0_default_active_minus1 = 0;
+    pps->num_ref_idx_l1_default_active_minus1 = 0;
 
     pps->init_qp_minus26 = priv->fixed_qp_idr - 26;
 
-    // modify QP values in non-CQP mode and low power mode encoding
+    // driver requires enablement of cu_qp_delta_enabled_flag for low power mode encoding
     pps->cu_qp_delta_enabled_flag = (ctx->va_rc_mode != VA_RC_CQP | ctx->low_power);
-    pps->diff_cu_qp_delta_depth   = ctx->low_power ? 3 : 0;
+    pps->diff_cu_qp_delta_depth   = 0;
 
     pps->pps_loop_filter_across_slices_enabled_flag = 1;
 
