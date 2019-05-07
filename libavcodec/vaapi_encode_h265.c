@@ -899,6 +899,9 @@ static int vaapi_encode_h265_init_slice_params(AVCodecContext *avctx,
     sh->slice_segment_address           = slice->block_start;
 
     sh->slice_type = hpic->slice_type;
+    // enable low delay B frame to replace regular P frame for low power mode.
+    if (sh->slice_type == HEVC_SLICE_P && ctx->low_power)
+        sh->slice_type = HEVC_SLICE_B;
 
     sh->slice_pic_order_cnt_lsb = hpic->pic_order_cnt &
         (1 << (sps->log2_max_pic_order_cnt_lsb_minus4 + 4)) - 1;
