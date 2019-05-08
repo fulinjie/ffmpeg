@@ -27,6 +27,7 @@
 #include "formats.h"
 #include "internal.h"
 #include "video.h"
+#include "libavutil/imgutils.h"
 
 typedef struct HWDownloadContext {
     const AVClass *class;
@@ -142,13 +143,37 @@ static int hwdownload_filter_frame(AVFilterLink *link, AVFrame *input)
         goto fail;
     }
 
-    output = ff_get_video_buffer(outlink, ctx->hwframes->width,
-                                 ctx->hwframes->height);
-    if (!output) {
-        err = AVERROR(ENOMEM);
-        goto fail;
-    }
+    if (1) {
+        output = av_frame_alloc();
+        if (!output) {
+            err = AVERROR(ENOMEM);
+            goto fail;
+        }
+        output->linesize[0] = FFALIGN(outlink->w, 128);
+        output->linesize[1] = output->linesize[0];
+        AVBufferPool *pool = av_buffer_pool_init(av_image_get_buffer_size(outlink->format,
+                            FFALIGN(outlink->w, 128), FFALIGN(outlink->h, 64), 1), av_buffer_allocz);
+        output->buf[0]      = av_buffer_pool_get(pool);
 
+        output->format      = outlink->format;
+        if (!output->buf[0]) {
+            err = AVERROR(ENOMEM);
+            av_buffer_pool_uninit(&pool);
+            goto fail;
+        }
+        output->data[0] = output->buf[0]->data;
+        output->data[1] = output->buf[0]->data + output->linesize[0] * FFALIGN(outlink->h, 64);
+
+        av_buffer_pool_uninit(&pool);
+
+    } else {
+        output = ff_get_video_buffer(outlink, ctx->hwframes->width,
+                                    ctx->hwframes->height);
+        if (!output) {
+            err = AVERROR(ENOMEM);
+            goto fail;
+        }
+    }
     err = av_hwframe_transfer_data(output, input, 0);
     if (err < 0) {
         av_log(ctx, AV_LOG_ERROR, "Failed to download frame: %d.\n", err);
