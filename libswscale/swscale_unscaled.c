@@ -433,6 +433,41 @@ static int uyvyToYuv422Wrapper(SwsContext *c, const uint8_t *src[],
     return srcSliceH;
 }
 
+static int ayuvToYuv420Wrapper(SwsContext *c, const uint8_t *src[],
+                               int srcStride[], int srcSliceY, int srcSliceH,
+                               uint8_t *dstParam[], int dstStride[])
+{
+    uint8_t *ydst = dstParam[0] + dstStride[0] * srcSliceY;
+    uint8_t *udst = dstParam[1] + dstStride[1] * srcSliceY / 4;
+    uint8_t *vdst = dstParam[2] + dstStride[2] * srcSliceY / 4;
+
+    ayuvtoyuv420(ydst, udst, vdst, src[0], c->srcW, srcSliceH, dstStride[0],
+                 dstStride[1], srcStride[0]);
+
+    if (dstParam[3])
+        fillPlane(dstParam[3], dstStride[3], c->srcW, srcSliceH, srcSliceY, 255);
+
+    return srcSliceH;
+}
+
+static int ayuvToYuv444Wrapper(SwsContext *c, const uint8_t *src[],
+                               int srcStride[], int srcSliceY, int srcSliceH,
+                               uint8_t *dstParam[], int dstStride[])
+{
+    uint8_t *ydst = dstParam[0] + dstStride[0] * srcSliceY;
+    uint8_t *udst = dstParam[1] + dstStride[1] * srcSliceY;
+    uint8_t *vdst = dstParam[2] + dstStride[2] * srcSliceY;
+
+    ayuvtoyuv444(ydst, udst, vdst, src[0], c->srcW, srcSliceH, dstStride[0],
+                 dstStride[1], srcStride[0]);
+
+    if (dstParam[3])
+        fillPlane(dstParam[3], dstStride[3], c->srcW, srcSliceH, srcSliceY, 255);
+
+    return srcSliceH;
+}
+
+
 static void gray8aToPacked32(const uint8_t *src, uint8_t *dst, int num_pixels,
                              const uint8_t *palette)
 {
@@ -2112,10 +2147,16 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if (srcFormat == AV_PIX_FMT_UYVY422 &&
        (dstFormat == AV_PIX_FMT_YUV420P || dstFormat == AV_PIX_FMT_YUVA420P))
         c->swscale = uyvyToYuv420Wrapper;
+    if (srcFormat == AV_PIX_FMT_AYUV &&
+       (dstFormat == AV_PIX_FMT_YUV420P || dstFormat == AV_PIX_FMT_YUVA420P))
+        c->swscale = ayuvToYuv420Wrapper;
     if (srcFormat == AV_PIX_FMT_YUYV422 && dstFormat == AV_PIX_FMT_YUV422P)
         c->swscale = yuyvToYuv422Wrapper;
     if (srcFormat == AV_PIX_FMT_UYVY422 && dstFormat == AV_PIX_FMT_YUV422P)
         c->swscale = uyvyToYuv422Wrapper;
+    if (srcFormat == AV_PIX_FMT_AYUV && dstFormat == AV_PIX_FMT_YUV444P)
+        c->swscale = ayuvToYuv444Wrapper;
+
 
 #define isPlanarGray(x) (isGray(x) && (x) != AV_PIX_FMT_YA8 && (x) != AV_PIX_FMT_YA16LE && (x) != AV_PIX_FMT_YA16BE)
     /* simple copy */

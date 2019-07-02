@@ -946,6 +946,44 @@ static void uyvytoyuv422_c(uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
     }
 }
 
+static void ayuvtoyuv420_c(uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
+                           const uint8_t *src, int width, int height,
+                           int lumStride, int chromStride, int srcStride)
+{
+    int y;
+    const int chromWidth = AV_CEIL_RSHIFT(width, 1);
+
+    for (y = 0; y < height; y++) {
+        extract_even_c(src, ydst, width);
+        if (y & 1) {
+            extract_odd2avg_c(src - srcStride, src, udst, vdst, chromWidth);
+            udst += chromStride;
+            vdst += chromStride;
+        }
+
+        src  += srcStride;
+        ydst += lumStride;
+    }
+}
+
+static void ayuvtoyuv444_c(uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
+                           const uint8_t *src, int width, int height,
+                           int lumStride, int chromStride, int srcStride)
+{
+    int y;
+    const int chromWidth = AV_CEIL_RSHIFT(width, 1);
+
+    for (y = 0; y < height; y++) {
+        extract_even_c(src, ydst, width);
+        extract_odd2_c(src, udst, vdst, chromWidth);
+
+        src  += srcStride;
+        ydst += lumStride;
+        udst += chromStride;
+        vdst += chromStride;
+    }
+}
+
 static av_cold void rgb2rgb_init_c(void)
 {
     rgb15to16          = rgb15to16_c;
@@ -991,4 +1029,7 @@ static av_cold void rgb2rgb_init_c(void)
     uyvytoyuv422       = uyvytoyuv422_c;
     yuyvtoyuv420       = yuyvtoyuv420_c;
     yuyvtoyuv422       = yuyvtoyuv422_c;
+
+    ayuvtoyuv420       = ayuvtoyuv420_c;
+    ayuvtoyuv444       = ayuvtoyuv444_c;
 }

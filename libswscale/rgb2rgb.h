@@ -166,6 +166,12 @@ extern void (*yuyvtoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const u
 extern void (*yuyvtoyuv422)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
                             int width, int height,
                             int lumStride, int chromStride, int srcStride);
+extern void (*ayuvtoyuv420)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
+                            int width, int height,
+                            int lumStride, int chromStride, int srcStride);
+extern void (*ayuvtoyuv444)(uint8_t *ydst, uint8_t *udst, uint8_t *vdst, const uint8_t *src,
+                            int width, int height,
+                            int lumStride, int chromStride, int srcStride);
 
 void ff_sws_rgb2rgb_init(void);
 
