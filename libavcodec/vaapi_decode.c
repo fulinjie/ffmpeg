@@ -24,6 +24,7 @@
 #include "decode.h"
 #include "internal.h"
 #include "vaapi_decode.h"
+#include "vp9shared.h"
 
 
 int ff_vaapi_decode_make_param_buffer(AVCodecContext *avctx,
@@ -152,11 +153,24 @@ int ff_vaapi_decode_issue(AVCodecContext *avctx,
 {
     VAAPIDecodeContext *ctx = avctx->internal->hwaccel_priv_data;
     VAStatus vas;
-    int err;
+    int i, err;
+
+    const VP9SharedContext *h = avctx->priv_data;
 
     av_log(avctx, AV_LOG_DEBUG, "Decode to surface %#x.\n",
            pic->output_surface);
-
+/*
+    if (avctx->internal->keep_context ) {
+    // register refs surface in context->RTtbl
+        for (i = 0; i < 8; i++) {
+            if (ff_vaapi_get_surface_id(h->refs[i].f))
+                vas = vaBeginPicture(ctx->hwctx->display, ctx->va_context,
+                                    ff_vaapi_get_surface_id(h->refs[i].f));
+            else
+                break;
+        }
+    }
+*/
     vas = vaBeginPicture(ctx->hwctx->display, ctx->va_context,
                          pic->output_surface);
     if (vas != VA_STATUS_SUCCESS) {
@@ -670,17 +684,31 @@ int ff_vaapi_decode_init(AVCodecContext *avctx)
     if (err)
         goto fail;
 
+    if (avctx->internal->keep_context) {
+    // exapande surface_ids, add refs surface
+    ctx->hwfc->surface_ids = av_realloc_array(ctx->hwfc->surface_ids, ctx->hwfc->nb_surfaces + 8, sizeof(ctx->hwfc->surface_ids));
+    const VP9SharedContext *h = avctx->priv_data;
+    int i;
+        for (i = 0; i < 8; i ++) {
+            ctx->hwfc->surface_ids[ctx->hwfc->nb_surfaces + i] = ff_vaapi_get_surface_id(h->refs[i].f);
+        }
+
+        ctx->hwfc->nb_surfaces += 8;
+    }
+
+
     vas = vaCreateContext(ctx->hwctx->display, ctx->va_config,
-                          avctx->coded_width, avctx->coded_height,
-                          VA_PROGRESSIVE,
-                          ctx->hwfc->surface_ids,
-                          ctx->hwfc->nb_surfaces,
-                          &ctx->va_context);
+                              avctx->coded_width, avctx->coded_height,
+                              VA_PROGRESSIVE,
+                              ctx->hwfc->surface_ids,
+                              ctx->hwfc->nb_surfaces,
+                              &ctx->va_context);
+
     if (vas != VA_STATUS_SUCCESS) {
-        av_log(avctx, AV_LOG_ERROR, "Failed to create decode "
-               "context: %d (%s).\n", vas, vaErrorStr(vas));
-        err = AVERROR(EIO);
-        goto fail;
+            av_log(avctx, AV_LOG_ERROR, "Failed to create decode "
+                   "context: %d (%s).\n", vas, vaErrorStr(vas));
+            err = AVERROR(EIO);
+            goto fail;
     }
 
     av_log(avctx, AV_LOG_DEBUG, "Decode context initialised: "

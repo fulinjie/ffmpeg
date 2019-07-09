@@ -181,6 +181,7 @@ static int update_size(AVCodecContext *avctx, int w, int h)
     int lflvl_len, i;
 
     av_assert0(w > 0 && h > 0);
+    avctx->internal->keep_context = 0;
 
     if (!(s->pix_fmt == s->gf_fmt && w == s->w && h == s->h)) {
         if ((ret = ff_set_dimensions(avctx, w, h)) < 0)
@@ -215,6 +216,9 @@ static int update_size(AVCodecContext *avctx, int w, int h)
 
         *fmtp++ = s->pix_fmt;
         *fmtp = AV_PIX_FMT_NONE;
+
+        if (s->w && s->h)
+            avctx->internal->keep_context = 1;
 
         ret = ff_thread_get_format(avctx, pix_fmts);
         if (ret < 0)
