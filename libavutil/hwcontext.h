@@ -389,7 +389,7 @@ int av_hwframe_get_buffer(AVBufferRef *hwframe_ctx, AVFrame *frame, int flags);
  * @param flags currently unused, should be set to zero
  * @return 0 on success, a negative AVERROR error code on failure.
  */
-int av_hwframe_transfer_data(AVFrame *dst, const AVFrame *src, int flags);
+int av_hwframe_transfer_data(AVFrame **dst, const AVFrame *src, int flags);
 
 enum AVHWFrameTransferDirection {
     /**

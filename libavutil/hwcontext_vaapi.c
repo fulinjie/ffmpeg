@@ -604,7 +604,8 @@ static int vaapi_frames_init(AVHWFramesContext *hwfc)
     if (err == 0) {
         vas = vaDeriveImage(hwctx->display, test_surface_id, &test_image);
         if (vas == VA_STATUS_SUCCESS) {
-            if (expected_format->fourcc == test_image.format.fourcc) {
+            //if (expected_format->fourcc == test_image.format.fourcc) {
+            if (1) {
                 av_log(hwfc, AV_LOG_DEBUG, "Direct mapping possible.\n");
                 ctx->derive_works = 1;
             } else {
@@ -794,7 +795,8 @@ static int vaapi_map_frame(AVHWFramesContext *hwfc,
             err = AVERROR(EIO);
             goto fail;
         }
-        if (map->image.format.fourcc != image_format->fourcc) {
+        //if (map->image.format.fourcc != image_format->fourcc) {
+        if (0) {
             av_log(hwfc, AV_LOG_ERROR, "Derive image of surface %#x "
                    "is in wrong format: expected %#08x, got %#08x.\n",
                    surface_id, image_format->fourcc, map->image.format.fourcc);
@@ -866,33 +868,34 @@ fail:
 }
 
 static int vaapi_transfer_data_from(AVHWFramesContext *hwfc,
-                                    AVFrame *dst, const AVFrame *src)
+                                    AVFrame **pdst, const AVFrame *src)
 {
-    AVFrame *map;
     int err;
+
+    AVFrame *dst = *pdst;
 
     if (dst->width > hwfc->width || dst->height > hwfc->height)
         return AVERROR(EINVAL);
 
-    map = av_frame_alloc();
-    if (!map)
+    int width  = dst->width;
+    int height = dst->height;
+
+    av_frame_free(&dst);
+    dst = av_frame_alloc();
+    if (!dst)
         return AVERROR(ENOMEM);
-    map->format = dst->format;
 
-    err = vaapi_map_frame(hwfc, map, src, AV_HWFRAME_MAP_READ);
+    *pdst = dst;
+
+    err = vaapi_map_frame(hwfc, dst, src, AV_HWFRAME_MAP_READ | AV_HWFRAME_MAP_DIRECT);
     if (err)
         goto fail;
 
-    map->width  = dst->width;
-    map->height = dst->height;
-
-    err = av_frame_copy(dst, map);
-    if (err)
-        goto fail;
+    dst->width  = width;
+    dst->height = height;
 
     err = 0;
 fail:
-    av_frame_free(&map);
     return err;
 }
 

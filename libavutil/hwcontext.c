@@ -436,13 +436,13 @@ fail:
     return ret;
 }
 
-int av_hwframe_transfer_data(AVFrame *dst, const AVFrame *src, int flags)
+int av_hwframe_transfer_data(AVFrame **dst, const AVFrame *src, int flags)
 {
     AVHWFramesContext *ctx;
     int ret;
 
-    if (!dst->buf[0])
-        return transfer_data_alloc(dst, src, flags);
+    if (!(*dst)->buf[0])
+        return transfer_data_alloc(*dst, src, flags);
 
     if (src->hw_frames_ctx) {
         ctx = (AVHWFramesContext*)src->hw_frames_ctx->data;
@@ -450,10 +450,10 @@ int av_hwframe_transfer_data(AVFrame *dst, const AVFrame *src, int flags)
         ret = ctx->internal->hw_type->transfer_data_from(ctx, dst, src);
         if (ret < 0)
             return ret;
-    } else if (dst->hw_frames_ctx) {
-        ctx = (AVHWFramesContext*)dst->hw_frames_ctx->data;
+    } else if ((*dst)->hw_frames_ctx) {
+        ctx = (AVHWFramesContext*)(*dst)->hw_frames_ctx->data;
 
-        ret = ctx->internal->hw_type->transfer_data_to(ctx, dst, src);
+        ret = ctx->internal->hw_type->transfer_data_to(ctx, *dst, src);
         if (ret < 0)
             return ret;
     } else

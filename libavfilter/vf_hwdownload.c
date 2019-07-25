@@ -149,7 +149,7 @@ static int hwdownload_filter_frame(AVFilterLink *link, AVFrame *input)
         goto fail;
     }
 
-    err = av_hwframe_transfer_data(output, input, 0);
+    err = av_hwframe_transfer_data(&output, input, 0);
     if (err < 0) {
         av_log(ctx, AV_LOG_ERROR, "Failed to download frame: %d.\n", err);
         goto fail;
