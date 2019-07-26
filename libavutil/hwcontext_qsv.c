@@ -783,6 +783,34 @@ static int map_frame_to_surface(const AVFrame *frame, mfxFrameSurface1 *surface)
     return 0;
 }
 
+static int derive_surface_to_frame(AVFrame *frame, mfxFrameSurface1 *surface)
+{
+    switch (frame->format) {
+    case AV_PIX_FMT_NV12:
+    case AV_PIX_FMT_P010:
+        frame->data[0] = surface->Data.Y;
+        frame->data[1] = surface->Data.UV;
+        break;
+
+    case AV_PIX_FMT_YUV420P:
+        frame->data[0] = surface->Data.Y;
+        frame->data[1] = surface->Data.U;
+        frame->data[2] = surface->Data.V;
+        break;
+
+    case AV_PIX_FMT_BGRA:
+        frame->data[0] = surface->Data.B;
+        break;
+
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+    frame->linesize[0] = surface->Data.Pitch;
+    frame->pts         = surface->Data.TimeStamp;
+
+    return 0;
+}
+
 static int qsv_transfer_data_from(AVHWFramesContext *ctx, AVFrame *dst,
                                   const AVFrame *src)
 {
@@ -793,6 +821,8 @@ static int qsv_transfer_data_from(AVHWFramesContext *ctx, AVFrame *dst,
     mfxSyncPoint sync = NULL;
     mfxStatus err;
     int ret = 0;
+
+    int derive = 1;
 
     while (!s->session_download_init && !s->session_download && !ret) {
 #if HAVE_PTHREADS
@@ -848,6 +878,9 @@ static int qsv_transfer_data_from(AVHWFramesContext *ctx, AVFrame *dst,
         av_log(ctx, AV_LOG_ERROR, "Error synchronizing the operation: %d\n", err);
         return AVERROR_UNKNOWN;
     }
+
+    if (derive)
+        derive_surface_to_frame(dst, &out);
 
     return 0;
 }
