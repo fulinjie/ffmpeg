@@ -1092,6 +1092,11 @@ typedef struct RcOverride{
 #define AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE (1 << 20)
 
 /**
+ * Codec supports variable dimensions in encoding.
+ */
+#define AV_CODEC_CAP_VARIABLE_DIMENSIONS (1 << 21)
+
+/**
  * Pan Scan area.
  * This specifies the area which should be displayed.
  * Note there may be multiple such areas for one frame.
