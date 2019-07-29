@@ -389,6 +389,10 @@ int attribute_align_arg avcodec_send_frame(AVCodecContext *avctx, const AVFrame 
     if (!avcodec_is_open(avctx) || !av_codec_is_encoder(avctx->codec))
         return AVERROR(EINVAL);
 
+    /* reset draining if encoder is flushed during variable dimension encoding */
+    if (frame && avctx->internal->draining)
+        avctx->internal->draining = 0;
+
     if (avctx->internal->draining)
         return AVERROR_EOF;
 
