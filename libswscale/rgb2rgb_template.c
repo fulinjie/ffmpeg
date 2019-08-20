@@ -823,6 +823,17 @@ static void extract_even2_c(const uint8_t *src, uint8_t *dst0, uint8_t *dst1,
     }
 }
 
+static void extract_ayuv_c(const uint8_t *src, uint8_t *dst, int count)
+{
+    dst   +=  count;
+    src   +=  count * 4;
+    count  = -count;
+    while (count < 0) {
+        dst[count] = src[4 * count + 2];
+        count++;
+    }
+}
+
 static void extract_even2avg_c(const uint8_t *src0, const uint8_t *src1,
                                uint8_t *dst0, uint8_t *dst1, int count)
 {
@@ -853,6 +864,20 @@ static void extract_odd2_c(const uint8_t *src, uint8_t *dst0, uint8_t *dst1,
     }
 }
 
+static void extract_odd4_c(const uint8_t *src, uint8_t *dst0, uint8_t *dst1,
+                           int count)
+{
+    dst0  +=  count;
+    dst1  +=  count;
+    src   +=  count * 4;
+    count  = -count;
+    while (count < 0) {
+        dst0[count] = src[4 * count];
+        dst1[count] = src[4 * count + 1];
+        count++;
+    }
+}
+
 static void extract_odd2avg_c(const uint8_t *src0, const uint8_t *src1,
                               uint8_t *dst0, uint8_t *dst1, int count)
 {
@@ -867,6 +892,21 @@ static void extract_odd2avg_c(const uint8_t *src0, const uint8_t *src1,
         dst0[count] = (src0[4 * count + 0] + src1[4 * count + 0]) >> 1;
         dst1[count] = (src0[4 * count + 2] + src1[4 * count + 2]) >> 1;
         count++;
+    }
+}
+
+static void extract_ayuvavg_c(const uint8_t *src0, const uint8_t *src1,
+                              uint8_t *dst0, uint8_t *dst1, int count)
+{
+    dst0  +=  count;
+    dst1  +=  count;
+    src0  +=  count * 8;
+    src1  +=  count * 8;
+    count  = -count;
+    while (count < 0) {
+        dst0[count] = (src0[8 * count + 0] + src1[8 * count + 0]) >> 1;
+        dst1[count] = (src0[8 * count + 1] + src1[8 * count + 1]) >> 1;
+        count ++;
     }
 }
 
@@ -954,13 +994,12 @@ static void ayuvtoyuv420_c(uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
     const int chromWidth = AV_CEIL_RSHIFT(width, 1);
 
     for (y = 0; y < height; y++) {
-        extract_even_c(src, ydst, width);
+        extract_ayuv_c(src, ydst, width);
         if (y & 1) {
-            extract_odd2avg_c(src - srcStride, src, udst, vdst, chromWidth);
+            extract_ayuvavg_c(src, src + srcStride, vdst, udst, chromWidth);
             udst += chromStride;
             vdst += chromStride;
         }
-
         src  += srcStride;
         ydst += lumStride;
     }
@@ -971,11 +1010,11 @@ static void ayuvtoyuv444_c(uint8_t *ydst, uint8_t *udst, uint8_t *vdst,
                            int lumStride, int chromStride, int srcStride)
 {
     int y;
-    const int chromWidth = AV_CEIL_RSHIFT(width, 1);
+    const int chromWidth = width;
 
     for (y = 0; y < height; y++) {
-        extract_even_c(src, ydst, width);
-        extract_odd2_c(src, udst, vdst, chromWidth);
+        extract_ayuv_c(src, ydst, width);
+        extract_odd4_c(src - srcStride, vdst, udst, chromWidth);
 
         src  += srcStride;
         ydst += lumStride;
