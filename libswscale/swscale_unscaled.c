@@ -2147,15 +2147,15 @@ void ff_get_unscaled_swscale(SwsContext *c)
     if (srcFormat == AV_PIX_FMT_UYVY422 &&
        (dstFormat == AV_PIX_FMT_YUV420P || dstFormat == AV_PIX_FMT_YUVA420P))
         c->swscale = uyvyToYuv420Wrapper;
-    if (srcFormat == AV_PIX_FMT_AYUV &&
-       (dstFormat == AV_PIX_FMT_YUV420P || dstFormat == AV_PIX_FMT_YUVA420P))
-        c->swscale = ayuvToYuv420Wrapper;
+//    if (srcFormat == AV_PIX_FMT_AYUV &&
+//       (dstFormat == AV_PIX_FMT_YUV420P || dstFormat == AV_PIX_FMT_YUVA420P))
+//        c->swscale = ayuvToYuv420Wrapper;
     if (srcFormat == AV_PIX_FMT_YUYV422 && dstFormat == AV_PIX_FMT_YUV422P)
         c->swscale = yuyvToYuv422Wrapper;
     if (srcFormat == AV_PIX_FMT_UYVY422 && dstFormat == AV_PIX_FMT_YUV422P)
         c->swscale = uyvyToYuv422Wrapper;
-    if (srcFormat == AV_PIX_FMT_AYUV && dstFormat == AV_PIX_FMT_YUV444P)
-        c->swscale = ayuvToYuv444Wrapper;
+//    if (srcFormat == AV_PIX_FMT_AYUV && dstFormat == AV_PIX_FMT_YUV444P)
+//        c->swscale = ayuvToYuv444Wrapper;
 
 
 #define isPlanarGray(x) (isGray(x) && (x) != AV_PIX_FMT_YA8 && (x) != AV_PIX_FMT_YA16LE && (x) != AV_PIX_FMT_YA16BE)
