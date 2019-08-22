@@ -557,7 +557,7 @@ static void ayuvToY_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused1, 
 {
     int i;
     for (i = 0; i < width; i++)
-        dst[i] = src[4 * i + 3];
+        dst[i] = src[4 * i + 2];
 }
 
 static void ayuvToUV_c(uint8_t *dstU, uint8_t *dstV, const uint8_t *unused0, const uint8_t *src1,
