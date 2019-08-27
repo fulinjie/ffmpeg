@@ -441,6 +441,7 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_AYUV64     AV_PIX_FMT_NE(AYUV64BE, AYUV64LE)
 #define AV_PIX_FMT_P010       AV_PIX_FMT_NE(P010BE,  P010LE)
 #define AV_PIX_FMT_P016       AV_PIX_FMT_NE(P016BE,  P016LE)
+#define AV_PIX_FMT_Y210       AV_PIX_FMT_NE(Y210BE,  Y210LE)
 
 /**
   * Chromaticity coordinates of the source primaries.
