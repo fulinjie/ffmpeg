@@ -631,8 +631,8 @@ static void y210le_UV_c(uint8_t *dstU, uint8_t *dstV, const uint8_t *unused0, co
 {
     int i;
     for (i = 0; i < width; i++) {
-        AV_WN16(dstU + i * 2, AV_RL16(src + i * 8 + 2));
-        AV_WN16(dstV + i * 2, AV_RL16(src + i * 8 + 6));
+        AV_WN16(dstU + i * 2, AV_RL16(src + i * 8 + 2) >> 6);
+        AV_WN16(dstV + i * 2, AV_RL16(src + i * 8 + 6) >> 6);
     }
 }
 
@@ -641,8 +641,8 @@ static void y210be_UV_c(uint8_t *dstU, uint8_t *dstV, const uint8_t *unused0, co
 {
     int i;
     for (i = 0; i < width; i++) {
-        AV_WN16(dstU + i * 2, AV_RB16(src + i * 8 + 2));
-        AV_WN16(dstV + i * 2, AV_RB16(src + i * 8 + 6));
+        AV_WN16(dstU + i * 2, AV_RB16(src + i * 8 + 2) >> 6);
+        AV_WN16(dstV + i * 2, AV_RB16(src + i * 8 + 6) >> 6);
     }
 }
 
@@ -651,14 +651,14 @@ static void y210le_Y_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused0,
 {
     int i;
     for (i = 0; i < width; i++)
-        AV_WN16(dst + i * 2, AV_RL16(src + i * 8));
+        AV_WN16(dst + i * 2, AV_RL16(src + i * 4) >> 6);
 }
 static void y210be_Y_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused0, const uint8_t *unused1, int width,
                                uint32_t *unused2)
 {
     int i;
     for (i = 0; i < width; i++)
-        AV_WN16(dst + i * 2, AV_RB16(src + i * 4));
+        AV_WN16(dst + i * 2 ,AV_RB16(src + i * 4) >> 6);
 }
 
 static void read_ayuv64le_Y_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused0, const uint8_t *unused1, int width,
