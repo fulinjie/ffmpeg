@@ -760,6 +760,37 @@ static void y410BEToUV_c(uint8_t *dstU, uint8_t *dstV,
     }
 }
 
+static void read_y410le_A_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused0, const uint8_t *unused1, int width,
+                                uint32_t *unused2)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        uint8_t A = 0x00; // 0x00, 0x55, 0xAA, 0xFF
+
+        if (AV_RL16(src + 4 * i + 3) >> 6 & 0x01)
+            A |= 0x55;
+        if (AV_RL16(src + 4 * i + 3) >> 6 & 0x02)
+            A |= 0xAA;
+
+        AV_WN16(dst + i * 2, A << 6);
+    }
+}
+
+static void read_y410be_A_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused0, const uint8_t *unused1, int width,
+                                uint32_t *unused2)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        uint8_t A = 0x00; // 0x00, 0x55, 0xAA, 0xFF
+
+        if (AV_RB16(src + 4 * i + 3) >> 6 & 0x01)
+            A |= 0x55;
+        if (AV_RB16(src + 4 * i + 3) >> 6 & 0x02)
+            A |= 0xAA;
+
+        AV_WN16(dst + i * 2, A << 6);
+    }
+}
 
 static void p016LEToUV_c(uint8_t *dstU, uint8_t *dstV,
                        const uint8_t *unused0, const uint8_t *src1, const uint8_t *src2,
@@ -1674,6 +1705,12 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
             break;
         case AV_PIX_FMT_PAL8 :
             c->alpToYV12 = palToA_c;
+            break;
+        case AV_PIX_FMT_Y410LE:
+            c->alpToYV12 = read_y410le_A_c;
+            break;
+        case AV_PIX_FMT_Y410BE:
+            c->alpToYV12 = read_y410be_A_c;
             break;
         }
     }
