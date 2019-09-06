@@ -719,6 +719,48 @@ static void p010BEToUV_c(uint8_t *dstU, uint8_t *dstV,
     }
 }
 
+static void y410LEToY_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused1,
+                        const uint8_t *unused2, int width, uint32_t *unused)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        AV_WN16(dst + i * 2, 0x3FF & AV_RL16(src + i * 4 + 1) >> 2);
+    }
+}
+
+static void y410BEToY_c(uint8_t *dst, const uint8_t *src, const uint8_t *unused1,
+                        const uint8_t *unused2, int width, uint32_t *unused)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        AV_WN16(dst + i * 2, 0x3FF & AV_RB16(src + i * 4 + 1) >> 2);
+    }
+}
+
+
+static void y410LEToUV_c(uint8_t *dstU, uint8_t *dstV,
+                       const uint8_t *unused0, const uint8_t *src1, const uint8_t *src2,
+                       int width, uint32_t *unused)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        AV_WN16(dstU + i * 2, 0x3FF & AV_RL16(src1 + i * 4 + 0));
+        AV_WN16(dstV + i * 2, 0x3FF & AV_RL16(src1 + i * 4 + 2) >> 4);
+    }
+}
+
+static void y410BEToUV_c(uint8_t *dstU, uint8_t *dstV,
+                       const uint8_t *unused0, const uint8_t *src1, const uint8_t *src2,
+                       int width, uint32_t *unused)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        AV_WN16(dstU + i * 2, 0x3FF & AV_RB16(src1 + i * 4 + 0));
+        AV_WN16(dstV + i * 2, 0x3FF & AV_RB16(src1 + i * 4 + 2) >> 4);
+    }
+}
+
+
 static void p016LEToUV_c(uint8_t *dstU, uint8_t *dstV,
                        const uint8_t *unused0, const uint8_t *src1, const uint8_t *src2,
                        int width, uint32_t *unused)
@@ -1154,6 +1196,12 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
     case AV_PIX_FMT_P016BE:
         c->chrToYV12 = p016BEToUV_c;
         break;
+    case AV_PIX_FMT_Y410LE:
+        c->chrToYV12 = y410LEToUV_c;
+        break;
+    case AV_PIX_FMT_Y410BE:
+        c->chrToYV12 = y410BEToUV_c;
+        break;
     }
     if (c->chrSrcHSubSample) {
         switch (srcFormat) {
@@ -1572,6 +1620,13 @@ av_cold void ff_sws_init_input_funcs(SwsContext *c)
     case AV_PIX_FMT_P010BE:
         c->lumToYV12 = p010BEToY_c;
         break;
+    case AV_PIX_FMT_Y410LE:
+        c->lumToYV12 = y410LEToY_c;
+        break;
+    case AV_PIX_FMT_Y410BE:
+        c->lumToYV12 = y410BEToY_c;
+        break;
+
     case AV_PIX_FMT_GRAYF32LE:
 #if HAVE_BIGENDIAN
         c->lumToYV12 = grayf32ToY16_bswap_c;
