@@ -100,6 +100,28 @@ static int addroi_filter_frame(AVFilterLink *inlink, AVFrame *frame)
     AVFrameSideData *sd;
     int err;
 
+    char roi_file[] = "/home/linjiefu/data/demo/face_detection/roi.info";
+    FILE *fp;
+    char str_info[1024];
+
+    if ((fp = fopen(roi_file, "r")) == NULL)
+        printf("error!\n");
+    else {
+            fgets(str_info, 1024, fp);
+            ctx->region[X] = atoi(str_info);
+            printf("%s\n", str_info);
+            fgets(str_info, 1024, fp);
+            ctx->region[Y] = atoi(str_info);
+            printf("%s\n", str_info);
+            fgets(str_info, 1024, fp);
+            ctx->region[W] = atoi(str_info);
+            printf("%s\n", str_info);
+            fgets(str_info, 1024, fp);
+            ctx->region[H] = atoi(str_info);
+            printf("%s\n", str_info);
+        fclose(fp);
+    }
+
     if (ctx->clear) {
         av_frame_remove_side_data(frame, AV_FRAME_DATA_REGIONS_OF_INTEREST);
         sd = NULL;
