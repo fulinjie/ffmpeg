@@ -660,7 +660,7 @@ static void do_output(BM3DContext *s, uint8_t *dst, int dst_linesize,
                 sum_den += den;
             }
 
-            dstp[j] = av_clip_uint8(sum_num / sum_den);
+            dstp[j] = av_clip_uint8(lrintf(sum_num / sum_den));
         }
     }
 }
@@ -688,7 +688,7 @@ static void do_output16(BM3DContext *s, uint8_t *dst, int dst_linesize,
                 sum_den += den;
             }
 
-            dstp[j] = av_clip_uintp2_c(sum_num / sum_den, depth);
+            dstp[j] = av_clip_uintp2_c(lrintf(sum_num / sum_den), depth);
         }
     }
 }
@@ -748,7 +748,7 @@ static int filter_frame(AVFilterContext *ctx, AVFrame **out, AVFrame *in, AVFram
     av_frame_copy_props(*out, in);
 
     for (p = 0; p < s->nb_planes; p++) {
-        const int nb_jobs = FFMIN(s->nb_threads, s->planeheight[p] / s->block_size);
+        const int nb_jobs = FFMAX(1, FFMIN(s->nb_threads, s->planeheight[p] / s->block_size));
         ThreadData td;
 
         if (!((1 << p) & s->planes) || ctx->is_disabled) {
@@ -856,6 +856,8 @@ static int activate(AVFilterContext *ctx)
         AVFrame *out = NULL;
         int ret, status;
         int64_t pts;
+
+        FF_FILTER_FORWARD_STATUS_BACK(ctx->outputs[0], ctx->inputs[0]);
 
         if ((ret = ff_inlink_consume_frame(ctx->inputs[0], &frame)) > 0) {
             ret = filter_frame(ctx, &out, frame, frame);

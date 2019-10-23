@@ -312,6 +312,15 @@ See @code{ffmpeg -filters} to view which filters have timeline support.
 
 @c man end FILTERGRAPH DESCRIPTION
 
+@anchor{commands}
+@chapter Changing options at runtime with a command
+
+Some options can be changed during the operation of the filter using
+a command. These options are marked 'T' on the output of
+@command{ffmpeg} @option{-h filter=<name of filter>}.
+The name of the command is the name of the option and the argument is
+the new value.
+
 @anchor{framesync}
 @chapter Options for filters with several inputs (framesync)
 @c man begin OPTIONS FOR FILTERS WITH SEVERAL INPUTS
@@ -2106,6 +2115,17 @@ Take the first 5 seconds of a clip, and reverse it.
 atrim=end=5,areverse
 @end example
 @end itemize
+
+@section arnndn
+
+Reduce noise from speech using Recurrent Neural Networks.
+
+This filter accepts the following options:
+
+@table @option
+@item model, m
+Set train model file to load. This option is always required.
+@end table
 
 @section asetnsamples
 
@@ -4663,7 +4683,16 @@ This filter logs a message when it detects that the input audio volume is less
 or equal to a noise tolerance value for a duration greater or equal to the
 minimum detected noise duration.
 
-The printed times and duration are expressed in seconds.
+The printed times and duration are expressed in seconds. The
+@code{lavfi.silence_start} or @code{lavfi.silence_start.X} metadata key
+is set on the first frame whose timestamp equals or exceeds the detection
+duration and it contains the timestamp of the first frame of the silence.
+
+The @code{lavfi.silence_duration} or @code{lavfi.silence_duration.X}
+and @code{lavfi.silence_end} or @code{lavfi.silence_end.X} metadata
+keys are set on the first frame after the silence. If @option{mono} is
+enabled, and each channel is evaluated separately, the @code{.X}
+suffixed keys are used, and @code{X} corresponds to the channel number.
 
 The filter accepts the following options:
 
@@ -4673,7 +4702,9 @@ Set noise tolerance. Can be specified in dB (in case "dB" is appended to the
 specified value) or amplitude ratio. Default is -60dB, or 0.001.
 
 @item duration, d
-Set silence duration until notification (default is 2 seconds).
+Set silence duration until notification (default is 2 seconds). See
+@ref{time duration syntax,,the Time duration section in the ffmpeg-utils(1) manual,ffmpeg-utils}
+for the accepted syntax.
 
 @item mono, m
 Process each channel separately, instead of combined. By default is disabled.
@@ -6174,6 +6205,18 @@ This option controls maximum possible value that will increase source pixel valu
 Set which planes to filter. Default is all. Allowed range is from 0 to 15.
 @end table
 
+@subsection Commands
+
+This filter supports the following @ref{commands} that corresponds to option of same name:
+@table @option
+@item factor
+@item threshold
+@item tolerance
+@item low
+@item high
+@item planes
+@end table
+
 @section ass
 
 Same as the @ref{subtitles} filter, except that it doesn't require libavcodec
@@ -6239,7 +6282,19 @@ number in range [5, 129].
 
 @item p
 Set what planes of frame filter will use for averaging. Default is all.
+
+@item a
+Set what variant of algorithm filter will use for averaging. Default is @code{p} parallel.
+Alternatively can be set to @code{s} serial.
+
+Parallel can be faster then serial, while other way around is never true.
+Parallel will abort early on first change being greater then thresholds, while serial
+will continue processing other side of frames if they are equal or bellow thresholds.
 @end table
+
+@subsection Commands
+This filter supports same @ref{commands} as options except option @code{s}.
+The command accepts the same syntax of the corresponding option.
 
 @section avgblur
 
@@ -6281,6 +6336,23 @@ The filter accepts the following option:
 @table @option
 @item min_val
 Set the minimal luminance value. Default is @code{16}.
+@end table
+
+@section bilateral
+Apply bilateral filter, spatial smoothing while preserving edges.
+
+The filter accepts the following options:
+@table @option
+@item sigmaS
+Set sigma of gaussian function to calculate spatial weight.
+Allowed range is 0 to 10. Default is 0.1.
+
+@item sigmaR
+Set sigma of gaussian function to calculate range weight.
+Allowed range is 0 to 1. Default is 0.1.
+
+@item planes
+Set planes to filter. Default is first only.
 @end table
 
 @section bitplanenoise
@@ -7079,6 +7151,10 @@ Simulate sepia tones:
 colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131
 @end example
 @end itemize
+
+@subsection Commands
+
+This filter supports the all above options as @ref{commands}.
 
 @section colorkey
 RGB colorspace color keying.
@@ -10077,6 +10153,8 @@ field and second number tells from which frame to pick up bottom field.
 If optionally followed by @code{+} output frame will be marked as interlaced,
 else if followed by @code{-} output frame will be marked as progressive, else
 it will be marked same as input frame.
+If optionally followed by @code{t} output frame will use only top field, or in
+case of @code{b} it will use only bottom field.
 If line starts with @code{#} or @code{;} that line is skipped.
 
 @item mode
@@ -11019,6 +11097,14 @@ red/green/blue component. Return 0 if there is no such component.
 @item alpha(x, y)
 Return the value of the pixel at location (@var{x},@var{y}) of the alpha
 plane. Return 0 if there is no such plane.
+
+@item interpolation
+Set one of interpolation methods:
+@table @option
+@item nearest, n
+@item bilinear, b
+@end table
+Default is bilinear.
 @end table
 
 For functions, if @var{x} and @var{y} are outside the area, the value will be
@@ -15545,17 +15631,18 @@ Please note that this is a different thing than specifying -1 for @option{w}
 or @option{h}, you still need to specify the output resolution for this option
 to work.
 
-@item force_divisible_by Ensures that the output resolution is divisible by the
+@item force_divisible_by
+Ensures that both the output dimensions, width and height, are divisible by the
 given integer when used together with @option{force_original_aspect_ratio}. This
-works similar to using -n in the @option{w} and @option{h} options.
+works similar to using @code{-n} in the @option{w} and @option{h} options.
 
 This option respects the value set for @option{force_original_aspect_ratio},
-increasing or decreasing the resolution accordingly. This may slightly modify
-the video's aspect ration.
+increasing or decreasing the resolution accordingly. The video's aspect ratio
+may be slightly modified.
 
-This can be handy, for example, if you want to have a video fit within a defined
-resolution using the @option{force_original_aspect_ratio} option but have
-encoder restrictions when it comes to width or height.
+This option can be handy if you need to have a video fit within or exceed
+a defined resolution using @option{force_original_aspect_ratio} but also have
+encoder restrictions on width or height divisibility.
 
 @end table
 
@@ -15816,6 +15903,16 @@ Set the initial horizontal scrolling position. Default is 0. Allowed range is fr
 
 @item vpos
 Set the initial vertical scrolling position. Default is 0. Allowed range is from 0 to 1.
+@end table
+
+@subsection Commands
+
+This filter supports the following @ref{commands}:
+@table @option
+@item horizontal, h
+Set the horizontal scrolling speed.
+@item vertical, v
+Set the vertical scrolling speed.
 @end table
 
 @anchor{selectivecolor}
@@ -20842,6 +20939,9 @@ Set the number or the name of the test to perform. Supported tests are:
 @item ring1
 @item ring2
 @item all
+
+@item max_frames, m
+Set the maximum number of frames generated for each test, default value is 30.
 
 @end table
 
