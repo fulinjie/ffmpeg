@@ -604,7 +604,8 @@ static int vaapi_frames_init(AVHWFramesContext *hwfc)
     if (err == 0) {
         vas = vaDeriveImage(hwctx->display, test_surface_id, &test_image);
         if (vas == VA_STATUS_SUCCESS) {
-            if (expected_format->fourcc == test_image.format.fourcc) {
+            //if (expected_format->fourcc == test_image.format.fourcc) {
+            if (1) {
                 av_log(hwfc, AV_LOG_DEBUG, "Direct mapping possible.\n");
                 ctx->derive_works = 1;
             } else {
@@ -794,7 +795,8 @@ static int vaapi_map_frame(AVHWFramesContext *hwfc,
             err = AVERROR(EIO);
             goto fail;
         }
-        if (map->image.format.fourcc != image_format->fourcc) {
+        //if (map->image.format.fourcc != image_format->fourcc) {
+        if (0) {
             av_log(hwfc, AV_LOG_ERROR, "Derive image of surface %#x "
                    "is in wrong format: expected %#08x, got %#08x.\n",
                    surface_id, image_format->fourcc, map->image.format.fourcc);
