@@ -391,7 +391,10 @@ int ff_qsv_init_internal_session(AVCodecContext *avctx, QSVSession *qs,
         return ret;
     }
 
-    MFXQueryIMPL(qs->session, &impl);
+    ret = MFXQueryIMPL(qs->session, &impl);
+    if (ret < 0)
+        return ff_qsv_print_error(avctx, ret,
+                                  "Error querying the session attributes");
 
     switch (MFX_IMPL_BASETYPE(impl)) {
     case MFX_IMPL_SOFTWARE:
@@ -691,7 +694,7 @@ int ff_qsv_init_session_device(AVCodecContext *avctx, mfxSession *psession,
     err = MFXQueryIMPL(parent_session, &impl);
     if (err == MFX_ERR_NONE)
         err = MFXQueryVersion(parent_session, &ver);
-    if (err != MFX_ERR_NONE)
+    else
         return ff_qsv_print_error(avctx, err,
                                   "Error querying the session attributes");
 
