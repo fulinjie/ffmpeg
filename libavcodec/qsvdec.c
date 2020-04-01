@@ -469,6 +469,19 @@ static int qsv_decode(AVCodecContext *avctx, QSVContext *q,
             return AVERROR_BUG;
         }
 
+        mfxVideoParam param = { 0 };
+        int err  = MFXVideoDECODE_GetVideoParam(q->session, &param);
+
+        if (param.mfx.FrameInfo.Width && param.mfx.FrameInfo.Height && (avctx->coded_width  != param.mfx.FrameInfo.Width ||
+            avctx->coded_height != param.mfx.FrameInfo.Height)) {
+            avctx->coded_width  = param.mfx.FrameInfo.Width;
+            avctx->coded_height = param.mfx.FrameInfo.Height;
+            avctx->width  = param.mfx.FrameInfo.Width;
+            avctx->height = param.mfx.FrameInfo.Height;
+            out_frame->frame->width = avctx->width;
+            out_frame->frame->height = avctx->height;
+        }
+
         out_frame->queued = 1;
         av_fifo_generic_write(q->async_fifo, &out_frame, sizeof(out_frame), NULL);
         av_fifo_generic_write(q->async_fifo, &sync,      sizeof(sync),      NULL);
@@ -613,6 +626,8 @@ int ff_qsv_process_data(AVCodecContext *avctx, QSVContext *q,
             goto reinit_fail;
         q->initialized = 0;
     }
+
+    param.mfx.EnableReallocRequest = MFX_CODINGOPTION_ON;
 
     if (!q->initialized) {
         ret = qsv_decode_init(avctx, q, &param);
