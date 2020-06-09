@@ -1562,7 +1562,7 @@ static OutputStream *new_output_stream(OptionsContext *o, AVFormatContext *oc, e
     MATCH_PER_STREAM_OPT(max_muxing_queue_size, i, ost->max_muxing_queue_size, oc, st);
     ost->max_muxing_queue_size *= sizeof(AVPacket);
 
-    if (oc->oformat->flags & AVFMT_GLOBALHEADER)
+    if (oc->oformat->flags & AVFMT_GLOBALHEADER && ost->autoscale)
         ost->enc_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     av_dict_copy(&ost->sws_dict, o->g->sws_dict, 0);
