@@ -116,7 +116,8 @@ AVCodec ff_wrapped_avframe_encoder = {
     .id             = AV_CODEC_ID_WRAPPED_AVFRAME,
     .encode2        = wrapped_avframe_encode,
     .caps_internal  = FF_CODEC_CAP_INIT_THREADSAFE,
-    .capabilities   = AV_CODEC_CAP_VARIABLE_DIMENSIONS,
+    .capabilities   = AV_CODEC_CAP_VARIABLE_DIMENSIONS |
+                      AV_CODEC_CAP_ENCODER_FLUSH,
 };
 
 AVCodec ff_wrapped_avframe_decoder = {

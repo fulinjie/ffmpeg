@@ -1177,7 +1177,9 @@ AVCodec ff_libx264_encoder = {
     .encode2          = X264_frame,
     .close            = X264_close,
     .capabilities     = AV_CODEC_CAP_DELAY | AV_CODEC_CAP_AUTO_THREADS |
-                        AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE,
+                        AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE |
+                        AV_CODEC_CAP_VARIABLE_DIMENSIONS |
+                        AV_CODEC_CAP_ENCODER_FLUSH,
     .priv_class       = &x264_class,
     .defaults         = x264_defaults,
     .init_static_data = X264_init_static,
