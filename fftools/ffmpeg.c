@@ -1040,6 +1040,38 @@ static void do_subtitle_out(OutputFile *of,
     }
 }
 
+static int recreate_encoder_instance(OutputStream *ost,
+                                     int width, int height)
+{
+    AVCodec *encoder = ost->enc_ctx->codec;
+    AVRational time_base = ost->enc_ctx->time_base;
+    int ret;
+
+    avcodec_free_context(&ost->enc_ctx);
+
+    ost->enc_ctx = avcodec_alloc_context3(encoder);
+    if (!ost->enc_ctx)
+        return AVERROR(ENOMEM);
+
+    ost->st->codecpar->width  = width;
+    ost->st->codecpar->height = height;
+
+    ret = avcodec_parameters_to_context(ost->enc_ctx, ost->st->codecpar);
+    if (ret < 0)
+        return ret;
+
+    ost->enc_ctx->time_base = time_base;
+
+    if (ret = avcodec_open2(ost->enc_ctx, encoder, &ost->encoder_opts) < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Error while re-opening encoder for output stream #%d:%d - "
+               "maybe incorrect parameters such as bit_rate, rate, width or height.\n",
+               ost->file_index, ost->index);
+        return ret;
+    }
+
+    return 0;
+}
+
 static void do_video_out(OutputFile *of,
                          OutputStream *ost,
                          AVFrame *next_picture,
@@ -1068,14 +1100,10 @@ static void do_video_out(OutputFile *of,
             goto error;
         }
 
-        if (enc->codec->close(enc) < 0)
+        if (recreate_encoder_instance(ost, next_picture->width, next_picture->height) < 0)
             goto error;
 
-        enc->width  = next_picture->width;
-        enc->height = next_picture->height;
-
-        if (enc->codec->init(enc) < 0)
-            goto error;
+        enc = ost->enc_ctx;
     }
 
     if (ost->source_index >= 0)
