@@ -110,6 +110,10 @@ static const struct {
 #if CONFIG_VAAPI
     { AV_PIX_FMT_YUYV422,
                        MFX_FOURCC_YUY2 },
+#if QSV_VERSION_ATLEAST(1, 9)
+    { AV_PIX_FMT_X2RGB10,
+                    MFX_FOURCC_A2RGB10 },
+#endif
 #if QSV_VERSION_ATLEAST(1, 27)
     { AV_PIX_FMT_Y210,
                        MFX_FOURCC_Y210 },
@@ -798,6 +802,10 @@ static int map_frame_to_surface(const AVFrame *frame, mfxFrameSurface1 *surface)
         surface->Data.V16 = (mfxU16 *)frame->data[0] + 3;
         break;
 #endif
+    case AV_PIX_FMT_X2RGB10:
+        surface->Data.A2RGB10 = (mfxA2RGB10 *)frame->data[0];
+        break;
+
     default:
         return MFX_ERR_UNSUPPORTED;
     }
