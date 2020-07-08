@@ -586,7 +586,8 @@ VAProfile ff_vaapi_parse_hevc_rext_profile(AVCodecContext *avctx)
     else if (!strcmp(profile->name, "Screen-Extended Main 10"))
         return VAProfileHEVCSccMain10;
     else if (!strcmp(profile->name, "Screen-Extended Main 4:4:4"))
-        return VAProfileHEVCSccMain444;
+        //return VAProfileHEVCSccMain444;
+        return VAProfileHEVCSccMain; // work around
 #if VA_CHECK_VERSION(1, 8, 0)
     else if (!strcmp(profile->name, "Screen-Extended Main 4:4:4 10"))
         return VAProfileHEVCSccMain444_10;
