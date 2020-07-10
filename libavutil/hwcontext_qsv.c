@@ -803,7 +803,11 @@ static int map_frame_to_surface(const AVFrame *frame, mfxFrameSurface1 *surface)
         break;
 #endif
     case AV_PIX_FMT_X2RGB10:
-        surface->Data.A2RGB10 = (mfxA2RGB10 *)frame->data[0];
+//        surface->Data.A2RGB10 = (mfxA2RGB10 *)frame->data[0];
+        surface->Data.B = frame->data[0];
+        surface->Data.G = frame->data[0] + 1;
+        surface->Data.R = frame->data[0] + 2;
+
         break;
 
     default:
