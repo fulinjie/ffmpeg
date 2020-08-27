@@ -237,6 +237,11 @@ static int init_muxer(AVFormatContext *s, AVDictionary **options)
     const AVCodecDescriptor *desc;
     AVDictionaryEntry *e;
 
+    if (s->oformat) {
+        if (!strcmp("mp4", s->oformat->name))
+            s->strict_std_compliance = FF_COMPLIANCE_UNOFFICIAL;
+    }
+
     if (options)
         av_dict_copy(&tmp, *options, 0);
 
