@@ -52,7 +52,7 @@ static int set_hwframe_ctx(AVCodecContext *ctx, AVBufferRef *hw_device_ctx)
         return -1;
     }
     frames_ctx = (AVHWFramesContext *)(hw_frames_ref->data);
-    frames_ctx->format    = AV_PIX_FMT_VAAPI;
+    frames_ctx->format    = AV_PIX_FMT_CUDA;
     frames_ctx->sw_format = AV_PIX_FMT_NV12;
     frames_ctx->width     = width;
     frames_ctx->height    = height;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
     AVFrame *sw_frame = NULL, *hw_frame = NULL;
     AVCodecContext *avctx = NULL;
     AVCodec *codec = NULL;
-    const char *enc_name = "h264_vaapi";
+    const char *enc_name = "h264_nvenc";
 
     if (argc < 5) {
         fprintf(stderr, "Usage: %s <width> <height> <input file> <output file>\n", argv[0]);
@@ -127,10 +127,10 @@ int main(int argc, char *argv[])
         goto close;
     }
 
-    err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VAAPI,
+    err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_CUDA,
                                  NULL, NULL, 0);
     if (err < 0) {
-        fprintf(stderr, "Failed to create a VAAPI device. Error code: %s\n", av_err2str(err));
+        fprintf(stderr, "Failed to create a CUDA device. Error code: %s\n", av_err2str(err));
         goto close;
     }
 
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
     avctx->time_base = (AVRational){1, 25};
     avctx->framerate = (AVRational){25, 1};
     avctx->sample_aspect_ratio = (AVRational){1, 1};
-    avctx->pix_fmt   = AV_PIX_FMT_VAAPI;
+    avctx->pix_fmt   = AV_PIX_FMT_CUDA;
 
     /* set hw_frames_ctx for encoder's AVCodecContext */
     if ((err = set_hwframe_ctx(avctx, hw_device_ctx)) < 0) {
