@@ -1686,6 +1686,7 @@ EXAMPLE_LIST="
     hw_decode_example
     metadata_example
     muxing_example
+    nvenc_encode_example
     qsvdec_example
     remuxing_example
     resampling_audio_example
@@ -3669,6 +3670,7 @@ http_multiclient_example_deps="avformat avutil fork"
 hw_decode_example_deps="avcodec avformat avutil"
 metadata_example_deps="avformat avutil"
 muxing_example_deps="avcodec avformat avutil swscale"
+nvenc_encode_example_deps="avcodec avutil h264_nvenc_encoder"
 qsvdec_example_deps="avcodec avutil libmfx h264_qsv_decoder"
 remuxing_example_deps="avcodec avformat avutil"
 resampling_audio_example_deps="avutil swresample"
