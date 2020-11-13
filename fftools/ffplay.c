@@ -357,6 +357,10 @@ static int autorotate = 1;
 static int find_stream_info = 1;
 static int filter_nbthreads = 0;
 
+static int64_t av_read_frame_last_time = 0;
+static int64_t av_read_frame_cur_time = 0;
+static int need_redemux = 0;
+
 /* current context */
 static int is_full_screen;
 static int64_t audio_callback_time;
@@ -1304,10 +1308,13 @@ static void do_exit(VideoState *is)
     if (is) {
         stream_close(is);
     }
-    if (renderer)
-        SDL_DestroyRenderer(renderer);
-    if (window)
-        SDL_DestroyWindow(window);
+    av_log(NULL, AV_LOG_TRACE, "stream_close.\n");
+    if (!need_redemux) {
+        if (renderer)
+            SDL_DestroyRenderer(renderer);
+        if (window)
+            SDL_DestroyWindow(window);
+    }
     uninit_opts();
 #if CONFIG_AVFILTER
     av_freep(&vfilters_list);
@@ -1315,9 +1322,11 @@ static void do_exit(VideoState *is)
     avformat_network_deinit();
     if (show_status)
         printf("\n");
-    SDL_Quit();
-    av_log(NULL, AV_LOG_QUIET, "%s", "");
-    exit(0);
+    if (!need_redemux) {
+        SDL_Quit();
+        av_log(NULL, AV_LOG_QUIET, "%s", "");
+        exit(0);
+    }
 }
 
 static void sigterm_handler(int sig)
@@ -3017,7 +3026,22 @@ static int read_thread(void *arg)
                 goto fail;
             }
         }
+
+        // receive frame time start
+        if (!av_read_frame_last_time)
+            av_read_frame_last_time = av_gettime_relative();
+        else
+            av_read_frame_last_time = av_read_frame_cur_time;
+
         ret = av_read_frame(ic, pkt);
+
+        // receive frame time end
+        av_read_frame_cur_time = av_gettime_relative();
+        if (av_read_frame_cur_time - av_read_frame_last_time > 2 * 1000000) {
+            need_redemux = 1;
+            av_log(NULL, AV_LOG_WARNING, "Didn't receive frames until a  long time interval, try to redemux in main loop.\n");
+        }
+
         if (ret < 0) {
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
                 if (is->video_stream >= 0)
@@ -3041,6 +3065,7 @@ static int read_thread(void *arg)
         } else {
             is->eof = 0;
         }
+
         /* check if packet is in play range specified by user, then queue, otherwise discard */
         stream_start_time = ic->streams[pkt->stream_index]->start_time;
         pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
@@ -3246,6 +3271,8 @@ static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
         if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
             video_refresh(is, &remaining_time);
         SDL_PumpEvents();
+        if (need_redemux)
+            break;
     }
 }
 
@@ -3285,6 +3312,14 @@ static void event_loop(VideoState *cur_stream)
     for (;;) {
         double x;
         refresh_loop_wait_event(cur_stream, &event);
+        if (need_redemux) {
+            av_log(NULL, AV_LOG_FATAL, "Receive redemux signal in event_loop.\n");
+            av_read_frame_last_time = 0;
+            av_read_frame_cur_time = 0;
+            do_exit(cur_stream);
+            av_usleep(100000);
+            break;
+        }
         switch (event.type) {
         case SDL_KEYDOWN:
             if (exit_on_keydown || event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q) {
@@ -3772,6 +3807,7 @@ int main(int argc, char **argv)
         }
     }
 
+retry:
     is = stream_open(input_filename, file_iformat);
     if (!is) {
         av_log(NULL, AV_LOG_FATAL, "Failed to initialize VideoState!\n");
@@ -3779,6 +3815,10 @@ int main(int argc, char **argv)
     }
 
     event_loop(is);
+    if (need_redemux) {
+        need_redemux = 0;
+        goto retry;
+    }
 
     /* never returns */
 
