@@ -128,6 +128,7 @@ typedef struct RTMPContext {
     char          auth_params[500];
     int           do_reconnect;
     int           auth_tried;
+    int           skip_type;                  ///< Skip this type of output pkt>
 } RTMPContext;
 
 #define PLAYER_KEY_OPEN_PART_LEN 30   ///< length of partial key used for first client digest signing
@@ -3046,12 +3047,17 @@ static int rtmp_write(URLContext *s, const uint8_t *buf, int size)
                 }
             }
 
-            if ((ret = rtmp_send_packet(rt, &rt->out_pkt, 0)) < 0)
-                return ret;
+            if (rt->out_pkt.type == rt->skip_type) {
+                ff_rtmp_packet_destroy(&rt->out_pkt);
+                av_log(s, AV_LOG_TRACE, "Drop type:%d pkt.\n", rt->skip_type);
+            } else {
+                if ((ret = rtmp_send_packet(rt, &rt->out_pkt, 0)) < 0)
+                    return ret;
+                rt->flv_nb_packets++;
+            }
             rt->flv_size = 0;
             rt->flv_off = 0;
             rt->flv_header_bytes = 0;
-            rt->flv_nb_packets++;
         }
     } while (buf_temp - buf < size);
 
@@ -3116,6 +3122,9 @@ static const AVOption rtmp_options[] = {
     {"rtmp_listen", "Listen for incoming rtmp connections", OFFSET(listen), AV_OPT_TYPE_INT, {.i64 = 0}, INT_MIN, INT_MAX, DEC, "rtmp_listen" },
     {"listen",      "Listen for incoming rtmp connections", OFFSET(listen), AV_OPT_TYPE_INT, {.i64 = 0}, INT_MIN, INT_MAX, DEC, "rtmp_listen" },
     {"timeout", "Maximum timeout (in seconds) to wait for incoming connections. -1 is infinite. Implies -rtmp_listen 1",  OFFSET(listen_timeout), AV_OPT_TYPE_INT, {.i64 = -1}, INT_MIN, INT_MAX, DEC, "rtmp_listen" },
+    {"skip_type", "Specify the type of output pkt to be skippped",  OFFSET(skip_type), AV_OPT_TYPE_INT, {.i64 = 0}, INT_MIN, INT_MAX, ENC, "skip_type"},
+        {"video", "Skip video pkt",  0, AV_OPT_TYPE_CONST, {.i64 = RTMP_PT_VIDEO}, RTMP_PT_AUDIO, RTMP_PT_VIDEO, ENC, "skip_type" },
+        {"audio", "Skip audio pkt",  0, AV_OPT_TYPE_CONST, {.i64 = RTMP_PT_AUDIO}, RTMP_PT_AUDIO, RTMP_PT_VIDEO, ENC, "skip_type" },
     { NULL },
 };
 
